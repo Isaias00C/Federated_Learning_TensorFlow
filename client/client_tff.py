@@ -26,7 +26,6 @@ device.on_unsubscribe = on_unsubscribe
 device.on_message = on_message
 device.on_connect = on_connect
 
-device.subscribe(subscribe_topic)
 device.connect(mqttBroker)
 device.loop_start()
 
@@ -47,24 +46,19 @@ try:
                         loss='sparse_categorical_crossentropy', 
                         metrics=['accuracy'])
 
-        global_model_weights = pickle.dumps(_model.get_weights())
-
-        # code for connecting with broker
-        
-
         # train and fit model
         _model.fit(x_train, y_train, epochs=5)
         _, accuracy = _model.evaluate(x_test,  y_test, verbose=2)
         print(f"accuracy: {accuracy}")
 
-        # send weights (local model) to server 
+        # calculating deltas
         local_model_weights = _model.get_weights()
         updated_weights = [u - i for u, i in zip(local_model_weights, global_model_weights)]
 
+        # send weights (local model) to server 
         updated_weights = pickle.dumps(updated_weights)
         weights_to_send = device.publish(publish_topic, updated_weights)
         print(f"client published to topic {publish_topic}")
-
         weights_to_send.wait_for_publish()
         time.sleep(1)
 
