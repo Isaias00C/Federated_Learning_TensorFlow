@@ -8,7 +8,7 @@ from callbacks import on_subscribe, on_unsubscribe, on_message, on_connect, on_p
 
 NUM_MODELS = 10
 server_id = f"server {uuid.uuid4()}"
-MQTTBROKER = "localhost"
+MQTTBROKER = "mosquitto-service"
 subscribe_topic = "federated_learning/local_weights"
 publish_topic = "federated_learning/global_weights"
 
