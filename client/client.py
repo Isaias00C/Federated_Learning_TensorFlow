@@ -14,7 +14,7 @@ x_train, x_test = x_train / 255.0, x_test / 255.0
 
 #client setup
 client_id = f"client_f{uuid.uuid4()}"
-mqttBroker = "localhost"
+mqttBroker = "mosquitto-service"
 subscribe_topic = "federated_learning/global_weights"
 publish_topic = "federated_learning/local_weights"
 q = queue.Queue()
