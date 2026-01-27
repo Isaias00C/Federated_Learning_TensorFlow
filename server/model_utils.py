@@ -1,4 +1,13 @@
 import tensorflow as tf
+import tensorflow_privacy as tfp
+
+def _optimizer() -> tf.optimizer:
+    return tfp.privacy.DPKerasSGDOptimizer(
+        l2_norm_clip=1.0,
+        noise_multiplier=1.3,
+        num_microbatches=1,
+        learning_rate=0.05
+    )
 
 def create_model():
     """
@@ -27,7 +36,7 @@ def create_model():
         tf.keras.layers.Dense(10, activation='softmax')
     ])
     
-    model.compile(optimizer='adam',
+    model.compile(optimizer=_optimizer(),
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
     
