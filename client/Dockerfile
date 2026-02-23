@@ -10,6 +10,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY callbacks.py .
 COPY model_utils.py .
-COPY client.py .
+COPY client_Crop_dataset.py .
 
 CMD ["python", "client.py"]

@@ -48,10 +48,10 @@ def create_dataset():
 
     # Criando clientes para simulação
     df_cliente_1 = criar_dataset_local_do_cliente(df_completo)
-    print(f"Cliente 1 selecionou: {len(df_cliente_1)} linhas.")
+    # print(f"Cliente 1 selecionou: {len(df_cliente_1)} linhas.")
 
     df_cliente_2 = criar_dataset_local_do_cliente(df_completo)
-    print(f"Cliente 2 selecionou: {len(df_cliente_2)} linhas.")
+    # print(f"Cliente 2 selecionou: {len(df_cliente_2)} linhas.")
 
     # ==========================================================
     # 3. CONVERTER PARA TENSORFLOW DATASET (Pronto pro TFF/Keras)

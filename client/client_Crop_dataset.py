@@ -4,7 +4,6 @@ import uuid
 import tensorflow as tf
 import pickle
 import queue
-import pandas as pd
 from callbacks import *
 from model_utils import create_model
 from create_dataset import create_dataset
@@ -13,7 +12,6 @@ from create_dataset import create_dataset
 #load dataset
 ds = create_dataset()
 (x_train, y_train), (x_test, y_test) = ds
-
 
 #client setup
 client_id = f"client_f{uuid.uuid4()}"
@@ -65,8 +63,8 @@ try:
         weights_to_send.wait_for_publish()
         time.sleep(1)
 
-        if accuracy > 0.9:
-            break
+        # if accuracy > 0.9:
+        #     break
 except KeyboardInterrupt:
     print("disconecting...")
 
