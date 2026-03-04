@@ -1,34 +1,36 @@
 import paho.mqtt.client as mqtt
 import time
 import uuid
-import tensorflow as tf
+import os
 import pickle
 import queue
-import pandas as pd
+import tensorflow as tf
 from callbacks import *
 from model_utils import create_model
+from create_dataset import create_dataset
+from inference import create_inference_test
 
 
 # load dataset
-dataset = tf.keras.datasets.mnist.load_data()
-(x_train, y_train), (x_test, y_test) = dataset
-x_train, x_test = x_train / 255.0, x_test / 255.0
+ds = create_dataset()
+(x_train, y_train), (x_test, y_test) = ds
 
-#client setup
-client_id = f"client_f{uuid.uuid4()}"
-mqttBroker = "mosquitto-service"
+# client setup
+# client_id = f"client_f{uuid.uuid4()}"
+MQTTBROKER = "mosquitto-service"
+CLIENT_ID = os.environ.get("POD_NAME", "fl-client-0")
 subscribe_topic = "federated_learning/global_weights"
-publish_topic = "federated_learning/local_weights"
+publish_topic = f"federated_learning/local_weights/{CLIENT_ID}"
 q = queue.Queue()
 
-device  = mqtt.Client(client_id=client_id, userdata=q, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
+device  = mqtt.Client(client_id=CLIENT_ID, userdata=q, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
 device.on_publish = on_publish
 device.on_subscribe = on_subscribe
 device.on_unsubscribe = on_unsubscribe
 device.on_message = on_message
 device.on_connect = on_connect
 
-device.connect(mqttBroker)
+device.connect(MQTTBROKER)
 device.loop_start()
 
 _model = create_model()
@@ -64,12 +66,16 @@ try:
         weights_to_send.wait_for_publish()
         time.sleep(1)
 
-        if accuracy > 0.9:
-            break
+        # if accuracy > 0.9:
+        #    break
 except KeyboardInterrupt:
     print("disconecting...")
 
 finally:
     device.loop_stop()
     device.disconnect()
+
+
+resultado = create_inference_test(_model, x_test[0])
+print(resultado, y_test[0])
 

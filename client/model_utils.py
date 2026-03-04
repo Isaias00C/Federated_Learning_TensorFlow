@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow_privacy as tfp
 
-def _optimizer() -> tf.optimizer:
+def _optimizer() -> tf.keras.optimizers.Optimizer:
     return tfp.privacy.DPKerasSGDOptimizer(
         l2_norm_clip=1.0,
         noise_multiplier=1.3,
@@ -42,7 +42,6 @@ def create_model():
     
     return model
 
-
 def create_model_MLP(num_features=7, num_classes=22):
     model = tf.keras.Sequential([
         # Camada de entrada
@@ -56,7 +55,7 @@ def create_model_MLP(num_features=7, num_classes=22):
     ])
     
     model.compile(
-        optimizer='adam',
+        optimizer=_optimizer(),
         loss='sparse_categorical_crossentropy', # Usado porque nossas labels são inteiros (0 a 21)
         metrics=['accuracy']
     )
