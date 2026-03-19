@@ -16,8 +16,9 @@ def on_unsubscribe(client, userdata, mid, reason_code_list, properties):
 def on_message(client, userdata, message):
     # userdata is the structure we choose to provide, here it's a list()
     userdata.put(message.payload)
-    # We only want to process 10 messages
-    if len(userdata) >= 10:
+    # We only want to process 100 messages
+    print(f'a quantidades de mensagens recebidas foram: {len(userdata)}')
+    if len(userdata) >= 500:
         client.unsubscribe("federated_learning/global_weights")
 
 def on_connect(client, userdata, flags, reason_code, properties):

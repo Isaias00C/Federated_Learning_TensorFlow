@@ -17,7 +17,7 @@ def create_dataset(test_split=0.2, batch_size=32):
     df_completo = pd.concat([X_scaled, pd.Series(y_encoded, name='label')], axis=1)
 
     # 2. Simulação de Cliente (Amostragem)
-    qtd_linhas = random.randint(200, 700)
+    qtd_linhas = random.randint(1000, 1800)
     df_cliente = df_completo.sample(n=qtd_linhas, replace=False)
 
     # --- NOVIDADE: Separação Treino e Teste no Pandas ---
@@ -29,13 +29,18 @@ def create_dataset(test_split=0.2, batch_size=32):
     df_train = df_cliente.iloc[n_test:]
 
     # 3. Conversão para TF Dataset
-    def df_to_tf_dataset(dataframe):
+    def df_to_tf_dataset(dataframe, is_train=False):
         labels = dataframe['label'].values
         features = dataframe.drop('label', axis=1).values
         # Retornamos o dataset pronto para o Keras .fit()
-        return tf.data.Dataset.from_tensor_slices((features, labels)).batch(batch_size)
+        ds = tf.data.Dataset.from_tensor_slices((features, labels))
 
-    ds_train = df_to_tf_dataset(df_train)
+        if is_train:
+            ds = ds.shuffle(buffer_size=len(dataframe))
+        
+        return ds.batch(batch_size)
+
+    ds_train = df_to_tf_dataset(df_train, is_train=True)
     ds_test = df_to_tf_dataset(df_test)
 
     print(f"Cliente com {len(df_cliente)} amostras. Treino: {len(df_train)}, Teste: {len(df_test)}")

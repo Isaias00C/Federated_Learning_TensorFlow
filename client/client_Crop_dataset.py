@@ -8,17 +8,12 @@ import tensorflow as tf
 from callbacks import *
 from model_utils import create_model_MLP
 from create_dataset import create_dataset
-# from inference import create_inference_test
-
 
 # load dataset
 ds = create_dataset()
-# (x_train, y_train), (x_test, y_test) = ds
 ds_train, ds_test = ds
 
-
 # client setup
-# client_id = f"client_f{uuid.uuid4()}"
 MQTTBROKER = "mosquitto-service"
 CLIENT_ID = os.environ.get("POD_NAME", "fl-client-0")
 subscribe_topic = "federated_learning/global_weights"
@@ -39,8 +34,7 @@ def treinar_e_enviar(weights_raw):
     _model.set_weights(global_weights)
     
     # Treino
-    # _model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-    _model.fit(ds_train, validation_data=ds_test, epochs=3, verbose=1)
+    _model.fit(ds_train, validation_data=ds_test, epochs=1, verbose=1)
     
     # Cálculo de Deltas (como você já estava fazendo)
     local_weights = _model.get_weights()

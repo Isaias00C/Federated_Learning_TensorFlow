@@ -23,18 +23,25 @@ spec:
         app: mosquitto
     spec:
       containers:
-      - name: mosquitto
-        image: eclipse-mosquitto:latest
-        ports:
-        - containerPort: 1883
-        volumeMounts:
-        - name: config-volume
-          mountPath: /mosquitto/config/mosquitto.conf
-          subPath: mosquitto.conf
+        - name: mosquitto
+          image: eclipse-mosquitto:latest
+          ports:
+            - containerPort: 1883
+          volumeMounts:
+            - name: config-volume
+              mountPath: /mosquitto/config/mosquitto.conf
+              subPath: mosquitto.conf
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
       volumes:
-      - name: config-volume
-        configMap:
-          name: mosquitto-config
+        - name: config-volume
+          configMap:
+            name: mosquitto-config
 ---
 apiVersion: v1
 kind: Service

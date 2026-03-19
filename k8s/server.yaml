@@ -14,5 +14,12 @@ spec:
     spec:
       containers:
         - name: fl-server
-          image: fl-server:latest
+          image: server-fl:v8
           imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"

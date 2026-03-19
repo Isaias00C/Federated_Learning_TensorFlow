@@ -7,7 +7,7 @@ from model_utils import create_model_MLP
 from callbacks import on_subscribe, on_unsubscribe, on_connect, on_publish
 
 
-NUM_MODELS = 5
+NUM_MODELS = 10
 MQTTBROKER = "mosquitto-service"
 server_id = f"server {uuid.uuid4()}"
 subscribe_topic = "federated_learning/local_weights/#"
@@ -19,7 +19,8 @@ def on_message(client, userdata, message):
     msg = pickle.loads(message.payload)
 
     userdata.append(msg)
-    
+    print(f"quantidade de modelos locais recebidos: {len(userdata)} de {NUM_MODELS}")
+
     if len(userdata) == NUM_MODELS:
         fed_avg_weights = [np.copy(w) for w in userdata[0]]
         
@@ -31,7 +32,14 @@ def on_message(client, userdata, message):
         # 3. Divide pela quantidade de modelos para obter a média
         fed_avg_weights = [w / NUM_MODELS for w in fed_avg_weights]
 
-        global_model.set_weights(fed_avg_weights)
+        current_global_weights = global_model.get_weights()
+
+        new_weights = [
+            current_w + delta_w
+            for current_w, delta_w in zip(current_global_weights, fed_avg_weights)
+        ]
+
+        global_model.set_weights(new_weights)
         print(global_model.summary())
         userdata.clear()
         
@@ -62,10 +70,11 @@ try:
     global_weights_pushish = server.publish(publish_topic, global_model_weights, retain=True)
     global_weights_pushish.wait_for_publish()
     time.sleep(1)
-    
+
+    print("aguardando mensagens dos usuarios agora")
+    server.loop_forever()
     
 except KeyboardInterrupt:
     server.loop_stop()
     server.disconnect()
 
-server.loop_forever()

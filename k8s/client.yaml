@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: fl-client
 spec:
-  replicas: 5
+  replicas: 10
   selector:
     matchLabels:
       app: fl-client
@@ -14,5 +14,17 @@ spec:
     spec:
       containers:
         - name: fl-client
-          image: docker.io/library/fl-client:v1.5
+          image: client-fl:v9
           imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
