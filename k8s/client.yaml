@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: fl-client
-          image: client-fl:v9
+          image: client-fl:v12
           imagePullPolicy: Never
           resources:
             requests:

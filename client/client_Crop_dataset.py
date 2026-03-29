@@ -8,6 +8,7 @@ import tensorflow as tf
 from callbacks import *
 from model_utils import create_model_MLP
 from create_dataset import create_dataset
+import random
 
 # load dataset
 ds = create_dataset()
@@ -18,16 +19,19 @@ MQTTBROKER = "mosquitto-service"
 CLIENT_ID = os.environ.get("POD_NAME", "fl-client-0")
 subscribe_topic = "federated_learning/global_weights"
 publish_topic = f"federated_learning/local_weights/{CLIENT_ID}"
-q = queue.Queue()
+#q = queue.Queue()
 
 _model = create_model_MLP()
+head_model = None
+start_time = None
+end_time = None
 
-device  = mqtt.Client(client_id=CLIENT_ID, userdata=q, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
+device  = mqtt.Client(client_id=CLIENT_ID, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
 device.on_publish = on_publish
 device.on_subscribe = on_subscribe
 device.on_unsubscribe = on_unsubscribe
 
-def treinar_e_enviar(weights_raw):
+def train(weights_raw):
     print(f"\n[{CLIENT_ID}] Evento: Novos pesos recebidos. Iniciando treino...")
     
     global_weights = pickle.loads(weights_raw)
@@ -36,23 +40,41 @@ def treinar_e_enviar(weights_raw):
     # Treino
     _model.fit(ds_train, validation_data=ds_test, epochs=1, verbose=1)
     
-    # Cálculo de Deltas (como você já estava fazendo)
+    # Recupera os pesos do modelo local
     local_weights = _model.get_weights()
-    deltas = [u - i for u, i in zip(local_weights, global_weights)]
     
     # Publicação
-    payload = pickle.dumps(deltas)
-    device.publish(publish_topic, payload)
-    print(f"[{CLIENT_ID}] Deltas enviados ao servidor.")
+    payload = pickle.dumps({
+        "weights": local_weights, 
+        "n": len(ds_train)
+    })
+
+    return payload
 
 # Callback de Mensagem: Aqui nasce a orientação a eventos
 def on_message(client, userdata, message):
-    if message.topic == subscribe_topic:
+    global head_model, start_time, end_time
+
+    if mqtt.topic_matches_sub(subscribe_topic, message.topic):
         # Chamamos a função de treino sempre que o tópico global publicar algo
-        treinar_e_enviar(message.payload)
+        # userdata.put(message.payload)
+        
+        weights = message.payload
+        print("mensagem recebida, colocando na fila para o treinamento")
+        
+        payload = train(weights)
+
+        weights_sent = device.publish(publish_topic, payload)
+        weights_sent.wait_for_publish()
+
+        print(f"[{CLIENT_ID}] Deltas enviados ao servidor.")
+
+    elif mqtt.topic_matches_sub("command/status", message.topic):
+        if message.payload == b"Fim do treinamento":
+            client.unsubcribe(subscribe_topic)
+            head_model = _model.layers[0]
 
 # Configuração do Cliente
-device = mqtt.Client(client_id=CLIENT_ID, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
 device.on_message = on_message
 device.on_connect = on_connect # Certifique-se que o on_connect faz o subscribe no tópico global
 

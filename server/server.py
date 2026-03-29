@@ -5,47 +5,72 @@ import pickle
 import numpy as np
 from model_utils import create_model_MLP
 from callbacks import on_subscribe, on_unsubscribe, on_connect, on_publish
+import tensorflow as tf
 
 
 NUM_MODELS = 10
 MQTTBROKER = "mosquitto-service"
+epochs = 0
+tail_model = None
 server_id = f"server {uuid.uuid4()}"
-subscribe_topic = "federated_learning/local_weights/#"
+subscribe_topic_training = "federated_learning/local_weights/#"
+subscribe_topic_split_inference = "subscribe_topic_split_inference"
 publish_topic = "federated_learning/global_weights"
+prediction_topic = "prediction"
+status_topic = "command/status"
 
 
 def on_message(client, userdata, message):
-    # userdata is the structure we choose to provide, here it's a list()
-    msg = pickle.loads(message.payload)
+    global epochs, tail_model
 
-    userdata.append(msg)
-    print(f"quantidade de modelos locais recebidos: {len(userdata)} de {NUM_MODELS}")
+    if mqtt.topic_matches_sub(subscribe_topic_training, message.topic):
 
-    if len(userdata) == NUM_MODELS:
-        fed_avg_weights = [np.copy(w) for w in userdata[0]]
-        
-        # 2. Soma os pesos dos modelos restantes (do segundo ao quinto)
-        for client_weights in userdata[1:]:
-            for layer_idx, layer_weights in enumerate(client_weights):
-                fed_avg_weights[layer_idx] += layer_weights
-        
-        # 3. Divide pela quantidade de modelos para obter a média
-        fed_avg_weights = [w / NUM_MODELS for w in fed_avg_weights]
+        # userdata is the structure we choose to provide, here it's a list()
+        msg = pickle.loads(message.payload)
 
-        current_global_weights = global_model.get_weights()
+        userdata.append(msg)
+        print(f"quantidade de modelos locais recebidos: {len(userdata)} de {NUM_MODELS}")
 
-        new_weights = [
-            current_w + delta_w
-            for current_w, delta_w in zip(current_global_weights, fed_avg_weights)
-        ]
+        if len(userdata) == NUM_MODELS:
+            epochs += 1
+            total_samples = sum(item["n"] for item in userdata)
+            fed_avg_weights = [np.zeros_like(w) for w in userdata[0]["weights"]]
+            
+            # 2. FedAvg
+            for client_data in userdata:
+                client_weights = client_data["weights"]
+                n_k = client_data["n"]
 
-        global_model.set_weights(new_weights)
-        print(global_model.summary())
-        userdata.clear()
-        
-        # send global model to devices
-        server.publish(publish_topic, pickle.dumps(global_model.get_weights()), retain=True)
+                weight_factor = n_k / total_samples
 
+                for layer_idx, layer_weights in enumerate(client_weights):
+                    fed_avg_weights[layer_idx] += layer_weights * weight_factor
+
+            
+            global_model.set_weights(fed_avg_weights)
+            print(global_model.summary())
+            userdata.clear()
+            
+            # send global model to devices
+            global_weights_sent = server.publish(publish_topic, pickle.dumps(global_model.get_weights()), retain=True)
+            global_weights_sent.wait_for_publish() 
+
+            if epochs == 100:
+                server.unsubscribe(subscribe_topic_training)
+
+                tail_model = global_model.layers[1:]
+
+                server.publish(status_topic, b"Fim do treinamento")
+
+    elif message.topic == subscribe_topic_split_inference:
+        activations = pickle.loads(message.payload)
+
+        if tail_model:
+            predict = tail_model.predict(activations)
+            print(predict)
+            predict = pickle.dumps(predict)
+            predict_published = server.publish(prediction_topic, predict)
+            predict_published.wait_for_publish()
 
 
 server = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id=server_id)

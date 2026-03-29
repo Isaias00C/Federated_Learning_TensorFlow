@@ -13,14 +13,6 @@ def on_unsubscribe(client, userdata, mid, reason_code_list, properties):
         print(f"Broker replied with failure: {reason_code_list[0]}")
     client.disconnect()
 
-def on_message(client, userdata, message):
-    # userdata is the structure we choose to provide, here it's a list()
-    userdata.put(message.payload)
-    # We only want to process 100 messages
-    print(f'a quantidades de mensagens recebidas foram: {len(userdata)}')
-    if len(userdata) >= 500:
-        client.unsubscribe("federated_learning/global_weights")
-
 def on_connect(client, userdata, flags, reason_code, properties):
     if reason_code.is_failure:
         print(f"Failed to connect: {reason_code}. loop_forever() will retry connection")
@@ -28,6 +20,8 @@ def on_connect(client, userdata, flags, reason_code, properties):
         # we should always subscribe from on_connect callback to be sure
         # our subscribed is persisted across reconnections.
         client.subscribe("federated_learning/global_weights")
+        client.subscribe("prediction")
+        client.subscribe("command/status")
 
 def on_publish(client, userdata, mid, reason_code, properties):
     print(f"{client} published to topic federated_learning/local_weights and the data is {userdata}")

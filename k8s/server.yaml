@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: fl-server
-          image: server-fl:v8
+          image: server-fl:v11
           imagePullPolicy: Never
           resources:
             requests:

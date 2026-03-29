@@ -20,6 +20,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
         # we should always subscribe from on_connect callback to be sure
         # our subscribed is persisted across reconnections.
         client.subscribe("federated_learning/local_weights/#")
+        client.subscribe("subscribe_topic_split_inference")
         print("server subscribed all local topics")
 
 def on_publish(client, userdata, mid, reason_code, properties):
