@@ -1,12 +1,13 @@
 import pandas as pd
 import tensorflow as tf
 import random
+from client.config.config import DATASET_PATH
 
 # ==========================================================
 # 1. CARREGAMENTO E PRÉ-PROCESSAMENTO (Sem sklearn)
 # ==========================================================
 def create_dataset(test_split=0.2, batch_size=32):
-    df = pd.read_csv("Crop_recommendation.csv")
+    df = pd.read_csv(DATASET_PATH)
 
     # 1. Pré-processamento (X e y)
     X = df.drop('label', axis=1)

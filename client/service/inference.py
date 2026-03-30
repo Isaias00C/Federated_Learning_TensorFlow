@@ -3,7 +3,7 @@ import time
 import pickle
 import paho.mqtt.client as mqtt
 import tensorflow as tf
-from client_Crop_dataset import _model, ds_test # Idealmente, carregue os pesos treinados aqui!
+from client.core.client_core import _model, ds_test # Idealmente, carregue os pesos treinados aqui!
 
 # Variáveis globais para controle do tempo de ida e volta do MQTT
 recebeu_resultado = False

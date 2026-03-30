@@ -3,25 +3,19 @@ import time
 import uuid
 import os
 import pickle
-import queue
 import tensorflow as tf
-from callbacks import *
-from model_utils import create_model_MLP
-from create_dataset import create_dataset
-import random
+from client.utils.callbacks import *
+from client.config.config import MQTT, CLIENT_ID, SUBSCRIBE_TOPICS, PUBLISH_TOPICS
+from client.utils.model_utils import create_model_MLP
+from client.service.create_dataset import create_dataset
 
-# load dataset
+# Carregar Dataset
 ds = create_dataset()
 ds_train, ds_test = ds
 
-# client setup
-MQTTBROKER = "mosquitto-service"
-CLIENT_ID = os.environ.get("POD_NAME", "fl-client-0")
-subscribe_topic = "federated_learning/global_weights"
-publish_topic = f"federated_learning/local_weights/{CLIENT_ID}"
-#q = queue.Queue()
-
 _model = create_model_MLP()
+
+# Variaveis Globais
 head_model = None
 start_time = None
 end_time = None
@@ -55,7 +49,7 @@ def train(weights_raw):
 def on_message(client, userdata, message):
     global head_model, start_time, end_time
 
-    if mqtt.topic_matches_sub(subscribe_topic, message.topic):
+    if mqtt.topic_matches_sub(sub=SUBSCRIBE_TOPICS["global_weights_topic"], topic=message.topic):
         # Chamamos a função de treino sempre que o tópico global publicar algo
         # userdata.put(message.payload)
         
@@ -64,21 +58,21 @@ def on_message(client, userdata, message):
         
         payload = train(weights)
 
-        weights_sent = device.publish(publish_topic, payload)
+        weights_sent = device.publish(PUBLISH_TOPICS["local_weights_topic"], payload)
         weights_sent.wait_for_publish()
 
         print(f"[{CLIENT_ID}] Deltas enviados ao servidor.")
 
     elif mqtt.topic_matches_sub("command/status", message.topic):
         if message.payload == b"Fim do treinamento":
-            client.unsubcribe(subscribe_topic)
+            client.unsubcribe(SUBSCRIBE_TOPICS["global_weights_topic"])
             head_model = _model.layers[0]
 
 # Configuração do Cliente
 device.on_message = on_message
 device.on_connect = on_connect # Certifique-se que o on_connect faz o subscribe no tópico global
 
-device.connect(MQTTBROKER)
+device.connect(MQTT)
 
 print(f"[{CLIENT_ID}] Aguardando comando do servidor...")
 try:
