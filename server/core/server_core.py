@@ -1,29 +1,18 @@
 import paho.mqtt.client as mqtt
 import time
-import uuid
 import pickle
 import numpy as np
-from model_utils import create_model_MLP
-from callbacks import on_subscribe, on_unsubscribe, on_connect, on_publish
-import tensorflow as tf
+from server.utils.model_utils import create_model_MLP
+from server.utils.callbacks import on_subscribe, on_unsubscribe, on_connect, on_publish
+from server.config.config import MQTT, NUM_MODELS, SUBSCRIBE_TOPICS, PUBLISH_TOPICS, SERVER_ID
 
-
-NUM_MODELS = 10
-MQTTBROKER = "mosquitto-service"
 epochs = 0
 tail_model = None
-server_id = f"server {uuid.uuid4()}"
-subscribe_topic_training = "federated_learning/local_weights/#"
-subscribe_topic_split_inference = "subscribe_topic_split_inference"
-publish_topic = "federated_learning/global_weights"
-prediction_topic = "prediction"
-status_topic = "command/status"
-
 
 def on_message(client, userdata, message):
     global epochs, tail_model
 
-    if mqtt.topic_matches_sub(subscribe_topic_training, message.topic):
+    if mqtt.topic_matches_sub(SUBSCRIBE_TOPICS["local_weights_topic"], message.topic):
 
         # userdata is the structure we choose to provide, here it's a list()
         msg = pickle.loads(message.payload)
@@ -52,28 +41,28 @@ def on_message(client, userdata, message):
             userdata.clear()
             
             # send global model to devices
-            global_weights_sent = server.publish(publish_topic, pickle.dumps(global_model.get_weights()), retain=True)
+            global_weights_sent = server.publish(PUBLISH_TOPICS["global_weights_topic"], pickle.dumps(global_model.get_weights()), retain=True)
             global_weights_sent.wait_for_publish() 
 
             if epochs == 100:
-                server.unsubscribe(subscribe_topic_training)
+                server.unsubscribe(SUBSCRIBE_TOPICS["local_weights_topic"])
 
                 tail_model = global_model.layers[1:]
 
-                server.publish(status_topic, b"Fim do treinamento")
+                server.publish(PUBLISH_TOPICS["status_topic"], b"Fim do treinamento")
 
-    elif message.topic == subscribe_topic_split_inference:
+    elif message.topic == SUBSCRIBE_TOPICS["split_inference_send_topic"]:
         activations = pickle.loads(message.payload)
 
         if tail_model:
             predict = tail_model.predict(activations)
             print(predict)
             predict = pickle.dumps(predict)
-            predict_published = server.publish(prediction_topic, predict)
+            predict_published = server.publish(PUBLISH_TOPICS["split_inference_receive_topic"], predict)
             predict_published.wait_for_publish()
 
 
-server = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id=server_id)
+server = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id=SERVER_ID)
 server.on_connect = on_connect
 server.on_message = on_message
 server.on_subscribe = on_subscribe
@@ -81,7 +70,7 @@ server.on_unsubscribe = on_unsubscribe
 server.on_publish = on_publish
 
 server.user_data_set([])
-server.connect(MQTTBROKER)
+server.connect(MQTT)
 
 
 global_model = create_model_MLP()
@@ -92,7 +81,7 @@ try:
     global_model_weights = global_model.get_weights()
     global_model_weights = pickle.dumps(global_model_weights)
 
-    global_weights_pushish = server.publish(publish_topic, global_model_weights, retain=True)
+    global_weights_pushish = server.publish(PUBLISH_TOPICS["global_weights_topic"], global_model_weights, retain=True)
     global_weights_pushish.wait_for_publish()
     time.sleep(1)
 

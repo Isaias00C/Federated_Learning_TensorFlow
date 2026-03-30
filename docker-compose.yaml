@@ -1,0 +1,12 @@
+services:
+  fl-client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    image: client-fl:v12
+
+  fl-server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: server-fl:v12

@@ -5,6 +5,7 @@ import os
 import pickle
 import tensorflow as tf
 from client.utils.callbacks import *
+from client.utils.model_utils import create_model_MLP
 from client.config.config import MQTT, CLIENT_ID, SUBSCRIBE_TOPICS, PUBLISH_TOPICS
 from client.utils.model_utils import create_model_MLP
 from client.service.create_dataset import create_dataset

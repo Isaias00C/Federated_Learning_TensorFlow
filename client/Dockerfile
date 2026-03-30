@@ -2,14 +2,16 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY client/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY callbacks.py .
-COPY model_utils.py .
-COPY create_dataset.py .
-COPY Crop_recommendation.csv .
-COPY client_Crop_dataset.py .
-COPY inference.py .
+COPY client/config/ ./config/
+COPY client/core/ ./core/
+COPY client/service/ ./service/
+COPY client/utils/ ./utils/
 
-CMD ["python", "client_Crop_dataset.py"]
+COPY dataset/dataset.csv ./dataset/
+
+ENV PYTHONPATH=/app
+
+CMD ["python", "core/client_core.py"]
