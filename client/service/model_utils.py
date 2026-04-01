@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow_privacy as tfp
 
 def create_model_MLP(num_features=7, num_classes=22):
     model = tf.keras.Sequential([

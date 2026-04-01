@@ -1,12 +1,14 @@
+version: "3.8"
+
 services:
-  fl-client:
+  client:
     build:
       context: .
       dockerfile: client/Dockerfile
-    image: client-fl:v12
+    image: client-fl:v26
 
-  fl-server:
+  server:
     build:
       context: .
       dockerfile: server/Dockerfile
-    image: server-fl:v12
+    image: server-fl:v20

@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
+import uuid
 
 MQTT = "mosquitto-service"
 NUM_MODELS = 10
-SERVER_ID = "server"
+SERVER_ID = os.getenv("POD_NAME", f"server-{uuid.uuid4().hex[:8]}")
 
 SUBSCRIBE_TOPICS = {
     "local_weights_topic": "pesos_local/#",

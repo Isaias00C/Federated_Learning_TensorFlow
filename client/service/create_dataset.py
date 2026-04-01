@@ -46,4 +46,4 @@ def create_dataset(test_split=0.2, batch_size=32):
 
     print(f"Cliente com {len(df_cliente)} amostras. Treino: {len(df_train)}, Teste: {len(df_test)}")
     
-    return ds_train, ds_test
+    return ds_train, ds_test, len(df_train)

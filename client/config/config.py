@@ -17,4 +17,6 @@ PUBLISH_TOPICS = {
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DATASET_PATH = BASE_DIR / "dataset" / "dataset.csv"
+DATASET_PATH = Path("dataset") / "dataset.csv"
+
+WEIGHTS_SAVE_PATH = BASE_DIR / "local_weights" / "weights.keras"

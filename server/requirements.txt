@@ -1,3 +1,8 @@
+--find-links https://storage.googleapis.com/jax-releases/jax_releases.html
+
+jaxlib==0.4.14
+jax==0.4.14
+
 tensorflow-federated==0.87.0
 tensorflow==2.14.1
 paho-mqtt==2.1.0

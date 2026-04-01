@@ -1,3 +1,5 @@
+from server.config.config import SUBSCRIBE_TOPICS, PUBLISH_TOPICS
+
 def on_subscribe(client, userdata, mid, reason_code_list, properties):
     if reason_code_list[0].is_failure:
         print(f"Broker rejected you subscription: {reason_code_list[0]}")
@@ -19,9 +21,10 @@ def on_connect(client, userdata, flags, reason_code, properties):
     else:
         # we should always subscribe from on_connect callback to be sure
         # our subscribed is persisted across reconnections.
-        client.subscribe("federated_learning/local_weights/#")
-        client.subscribe("subscribe_topic_split_inference")
+        for topic in SUBSCRIBE_TOPICS.values():
+            client.subscribe(topic)
         print("server subscribed all local topics")
 
 def on_publish(client, userdata, mid, reason_code, properties):
-    print(f"{client} published to topic federated_learning/global_weights and the data is {len(userdata)}")
+
+    print(f"{client} published: MID - {mid} RC - {reason_code}")

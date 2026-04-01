@@ -2,16 +2,12 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY client/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY client/requirements.txt ./client/
+RUN pip install --no-cache-dir -r ./client/requirements.txt
 
-COPY client/config/ ./config/
-COPY client/core/ ./core/
-COPY client/service/ ./service/
-COPY client/utils/ ./utils/
-
-COPY dataset/dataset.csv ./dataset/
+COPY client/ ./client/
+COPY dataset/ ./dataset/
 
 ENV PYTHONPATH=/app
 
-CMD ["python", "core/client_core.py"]
+CMD ["python", "client/core/client_core.py"]

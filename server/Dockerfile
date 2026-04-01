@@ -2,14 +2,11 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-RUN pip install jaxlib==0.4.14 -f https://storage.googleapis.com/jax-releases/jax_releases.html
-RUN pip install jax==0.4.14
+COPY server/requirements.txt ./server/
+RUN pip install --no-cache-dir -r ./server/requirements.txt
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY server/ ./server/
 
-COPY callbacks.py .
-COPY model_utils.py .
-COPY server.py .
+ENV PYTHONPATH=/app
 
-CMD ["python", "server.py"]
+CMD ["python", "server/core/server_core.py"]
